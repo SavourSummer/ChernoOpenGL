@@ -1,7 +1,47 @@
 #include<iostream>
 #include<GL/glew.h>
 #include <GLFW/glfw3.h>
-//#include<string>
+#include<string>
+#include<fstream>
+#include<sstream>
+
+struct ShaderProgramSource {
+    std::string VertexSource;
+    std::string FragmentSource;
+};
+
+static ShaderProgramSource ParseShader(const std::string& filePath)
+{
+    std::ifstream stream(filePath);//判断文件是否能打开
+    enum class Shadertype
+    {
+		NONE = -1,VERTEX = 0,FRAGMENT = 1
+    };  
+
+    std::string line;
+    std::stringstream ss[2];
+
+    Shadertype type = Shadertype::NONE;
+    while (getline(stream, line))
+    {
+        if (line.find("#shader") != std::string::npos)
+        {
+            if (line.find("vertex") != std::string::npos)
+            {
+                type = Shadertype::VERTEX;
+            }
+            else if (line.find("fragment") != std::string::npos)
+            {
+                type = Shadertype::FRAGMENT;
+            }
+        }
+        else
+        {
+            ss[(int)type] << line << '\n';
+        }
+    }
+    return { ss[0].str(),ss[1].str() };
+}
 
 
 static unsigned int  CompileShader(unsigned int type, const std::string& source) {
@@ -90,26 +130,8 @@ static int CreateShader(const std::string& vertexShader,const std::string & frag
         //                   0：起始顶点id 。2：其他顶点数量。 2 * sizeof(float)：顶点偏移到下一个顶点的Bytes。GL_FALSE：否归一化
 
 
-        std::string vertexShader =
-            "#version 330 core\n"
-            "\n"
-            "layout(location = 0)in vec4 position;"
-            "\n"
-            "void main()\n"
-            "{\n"
-            " gl_Position = position;\n"
-            "}\n";
-
-        std::string fragmentShader =
-            "#version 330 core\n"
-            "\n"
-            "layout(location = 0)out vec4 color;"
-            "\n"
-            "void main()\n"
-            "{\n"
-            " color = vec4(1.0, 0.0, 0.0, 1.0);\n"
-            "}\n";
-        unsigned int shader = CreateShader(vertexShader, fragmentShader);
+        ShaderProgramSource source = ParseShader("res/shaders/Basic.shader");
+        unsigned int shader = CreateShader(source.VertexSource, source.FragmentSource);
         glUseProgram(shader); /* 使用着色器程序 */
 
 
